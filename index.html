@@ -1,0 +1,392 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Fiscalización de Plantas Metalúrgicas Mineras - Potosí</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.css" integrity="sha512-xodZBNTC5n17Xt2atTPvknvLkzZjemniIB9ymm1jbXHjjgJskDKKG+6IEa+zH0lJMGaHLXyyyhQM6+nzf+dAYw==" crossorigin="" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    </head>
+<body>
+    <div id="loginContainer">
+        <h2>Bienvenido</h2>
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="username">Usuario:</label>
+                <input type="text" id="username" required>
+            </div>
+            <div class="form-group">
+                <label for="password">Contraseña:</label>
+                <input type="password" id="password" required>
+            </div>
+            <button type="submit" class="btn" id="loginButton">Iniciar Sesión</button>
+            <div id="loginError" class="error-message"></div>
+        </form>
+    </div>
+
+    <div id="mainContent" style="display: none;">
+        <div class="container">
+            <div class="header">
+                <h1>🏭 Sistema de Control y Fiscalización de Plantas Metalúrgicas Mineras</h1>
+                <p>Gobierno Autónomo Departamental de Potosí</p>
+            </div>
+
+            <div class="nav-tabs">
+                <button class="nav-tab active" onclick="showTab('dashboard')">📊 Panel</button>
+                <button class="nav-tab" onclick="showTab('mapa')">🗺️ Mapa GIS</button>
+                <button class="nav-tab" onclick="showTab('plantas')">🏭 Plantas</button>
+                <button class="nav-tab" onclick="showTab('inspecciones')">🔍 Inspecciones</button>
+                <button class="nav-tab" onclick="showTab('alertas')">⚠️ Alertas</button>
+                <button class="nav-tab" onclick="showTab('reportes')">📋 Reportes</button>
+            </div>
+
+            <div id="dashboard" class="tab-content active">
+                <h2>📊 Panel de Control</h2>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-number" id="totalPlantas">0</div>
+                        <div class="stat-label">Total Plantas</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="plantasOperativas">0</div>
+                        <div class="stat-label">🟢 Operativas</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="plantasSuspendidas">0</div>
+                        <div class="stat-label">🔴 Suspendidas</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="plantasSinActividad">0</div>
+                        <div class="stat-label">⚫ Sin Actividad</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="documentosVencidos">0</div>
+                        <div class="stat-label">📋 Docs. Vencidos</div>
+                    </div>
+                </div>
+
+                <div class="pending-inspections">
+                    <h4>🔍 Inspecciones Pendientes</h4>
+                    <ul id="pendingInspectionsList" class="pending-list"></ul>
+                </div>
+
+                <div class="alertas-container">
+                    <div class="alerta-card">
+                        <h3>🚨 Inspecciones Pendientes</h3>
+                        <p id="inspeccionesPendientes">0 plantas requieren inspección</p>
+                    </div>
+                    <div class="alerta-card warning">
+                        <h3>⏰ Documentos por Vencer</h3>
+                        <p id="documentosPorVencer">0 documentos vencen en 30 días</p>
+                    </div>
+                    <div class="alerta-card success">
+                        <h3>✅ Cumplimiento</h3>
+                        <p id="cumplimiento">0% plantas en regla</p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="mapa" class="tab-content">
+                <h2>🗺️ Mapa Georreferenciado de Plantas</h2>
+                <div id="map"></div>
+            </div>
+
+            <div id="plantas" class="tab-content">
+                <h2>🏭 Registro de Plantas Metalúrgicas</h2>
+
+                <div class="success-message" id="successMessage"></div>
+                <div class="error-message" id="errorMessage"></div>
+
+                <div class="input-actions">
+                    <div class="input-card">
+                        <span class="input-icon icon-individual">👤</span>
+                        <h3>Registro Individual</h3>
+                        <p>Agrega una planta metalúrgica de forma individual con todos sus datos</p>
+                        <button class="btn" onclick="showModal('plantaModal')">
+                            ➕ Agregar Nueva Planta
+                        </button>
+                    </div>
+
+                    <div class="input-card">
+                        <span class="input-icon icon-excel">📊</span>
+                        <h3>Importación Masiva</h3>
+                        <p>Importa múltiples plantas desde un archivo Excel (.xlsx, .xls)</p>
+                        <label for="excelFile" class="file-input-label">
+                            📁 Seleccionar Archivo Excel
+                        </label>
+                        <input type="file" id="excelFile" class="file-input" accept=".xlsx,.xls" onchange="importFromExcel(event)">
+                        <small style="color: #666; display: block; margin-top: 10px;">
+                            Formatos soportados: .xlsx, .xls
+                        </small>
+                    </div>
+                </div>
+
+                <div class="toolbar">
+                    <div class="toolbar-group">
+                        <button class="btn btn-success" onclick="exportToExcel('plantas')">
+                            📊 Exportar Excel
+                        </button>
+                        <button class="btn btn-info" onclick="exportToPDF('plantas')">
+                            📄 Exportar PDF
+                        </button>
+                        <button class="btn btn-warning" onclick="downloadTemplate()">
+                            📋 Descargar Plantilla Excel
+                        </button>
+                    </div>
+                </div>
+
+                <div class="search-bar">
+                    <input type="text" id="searchPlantas" placeholder="🔍 Buscar plantas por nombre, mineral o estado..." onkeyup="searchPlantas()">
+                </div>
+
+                <div id="plantasList" class="plantas-list">
+                    </div>
+            </div>
+
+            <div id="inspecciones" class="tab-content">
+                <h2>🔍 Registro de Inspecciones</h2>
+
+                <div class="toolbar">
+                    <div class="toolbar-group">
+                        <button class="btn" onclick="showModal('inspeccionModal')">
+                            📝 Nueva Inspección
+                        </button>
+                    </div>
+                    <div class="toolbar-group">
+                        <button class="btn btn-success" onclick="exportToExcel('inspecciones')">
+                            📊 Exportar Excel
+                        </button>
+                        <button class="btn btn-info" onclick="exportToPDF('inspecciones')">
+                            📄 Exportar PDF
+                        </button>
+                    </div>
+                </div>
+
+                <div class="responsive-table">
+                    <table id="inspeccionesTable">
+                        <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Planta</th>
+                                <th>Inspector</th>
+                                <th>Estado</th>
+                                <th>Observaciones</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="inspeccionesBody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="alertas" class="tab-content">
+                <h2>⚠️ Sistema de Alertas</h2>
+                <div class="alertas-container">
+                    <div class="alerta-card">
+                        <h3>🚨 Documentos Vencidos</h3>
+                        <div id="documentosVencidosLista"></div>
+                    </div>
+                    <div class="alerta-card warning">
+                        <h3>⏰ Próximos Vencimientos</h3>
+                        <div id="proximosVencimientos"></div>
+                    </div>
+                    <div class="alerta-card">
+                        <h3>🔍 Inspecciones Atrasadas</h3>
+                        <div id="inspeccionesAtrasadas"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="reportes" class="tab-content">
+                <h2>📋 Reportes y Exportaciones</h2>
+                <div class="export-buttons">
+                    <button class="btn btn-success" onclick="exportPendingInspections()">
+                        📊 Exportar Inspecciones Pendientes
+                    </button>
+                    <button class="btn btn-info" onclick="exportExpiredDocuments()">
+                        📄 Exportar Documentos Vencidos
+                    </button>
+                    <button class="btn btn-warning" onclick="exportPlantStatus()">
+                        📋 Exportar Estado de Plantas
+                    </button>
+                    <button class="btn btn-secondary" onclick="exportFullReport()">
+                        📃 Reporte Completo
+                    </button>
+                </div>
+                <div class="pending-inspections">
+                    <h4>🔍 Plantas Pendientes de Inspección</h4>
+                    <ul id="reportPendingList" class="pending-list"></ul>
+                </div>
+                <div class="responsive-table">
+                    <h3>📊 Resumen de Capacidades por Mineral</h3>
+                    <table id="capacidadesTable">
+                        <thead>
+                            <tr>
+                                <th>Mineral</th>
+                                <th>Plantas</th>
+                                <th>Capacidad Real (TM/día)</th>
+                                <th>Capacidad Operada (TM/día)</th>
+                                <th>% Utilización</th>
+                            </tr>
+                        </thead>
+                        <tbody id="capacidadesBody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div id="plantaModal" class="modal">
+            <div class="modal-content">
+                <span class="close" onclick="closeModal('plantaModal')">&times;</span>
+                <h2>➕ Agregar Nueva Planta</h2>
+                <form id="plantaForm">
+                    <input type="hidden" id="plantaId">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="nombrePlanta">Nombre/Razón Social:</label>
+                            <input type="text" id="nombrePlanta" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="representanteLegal">Representante Legal:</label>
+                            <input type="text" id="representanteLegal" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="nit">NIT:</label>
+                            <input type="text" id="nit" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="direccion">Dirección:</label>
+                            <input type="text" id="direccion" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="telefono">Teléfono:</label>
+                            <input type="text" id="telefono" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="latitud">Latitud:</label>
+                            <input type="number" id="latitud" step="any" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="longitud">Longitud:</label>
+                            <input type="number" id="longitud" step="any" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="procedencia">Procedencia del Mineral:</label>
+                            <input type="text" id="procedencia" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="destino">Destino del Mineral:</label>
+                            <input type="text" id="destino" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="actividad">Actividad:</label>
+                            <select id="actividad" required>
+                                <option value="">Seleccione</option>
+                                <option value="Concentración">Concentración</option>
+                                <option value="Fundición">Fundición</option>
+                                <option value="Refinación">Refinación</option>
+                                <option value="Lixiviación">Lixiviación</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="mineralPrincipal">Mineral Principal:</label>
+                            <select id="mineralPrincipal" required>
+                                <option value="">Seleccione</option>
+                                <option value="Ag Pb Zn">Ag Pb Zn</option>
+                                <option value="Sn">Sn</option>
+                                <option value="Cu">Cu</option>
+                                <option value="W">W</option>
+                                <option value="Au">Au</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="capacidadReal">Capacidad Real (TM/día):</label>
+                            <input type="number" id="capacidadAutorizada" step="0.01" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="capacidadOperada">Capacidad Operada (TM/día):</label>
+                            <input type="number" id="capacidadOperada" step="0.01">
+                        </div>
+                        <div class="form-group">
+                            <label for="fechaUltimaInspeccion">Fecha Última Inspección:</label>
+                            <input type="date" id="fechaUltimaInspeccion">
+                        </div>
+                        <div class="form-group">
+                            <label for="estado">Estado:</label>
+                            <select id="estado" required>
+                                <option value="Operativa">Operativa</option>
+                                <option value="Suspendida">Suspendida</option>
+                                <option value="Sin Actividad">Sin Actividad</option>
+                                <option value="En Observaciones">En Observaciones</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="licenciaAmbiental">Licencia Ambiental:</label>
+                            <input type="text" id="licenciaAmbiental">
+                        </div>
+                        <div class="form-group">
+                            <label for="licenciadeFuncionamiento">Licencia de Funcionamiento:</label>
+                            <input type="text" id="licenciadeFuncionamiento">
+                        </div>
+                        <div class="form-group">
+                            <label for="empadronamientominero">Empadronamiento Minero:</label>
+                            <input type="text" id="empadronamientominero">
+                        </div>
+                        <div class="form-group">
+                            <label for="observacionesPlanta">Observaciones:</label>
+                            <textarea id="observacionesPlanta" rows="3"></textarea>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn">💾 Guardar Planta</button>
+                </form>
+            </div>
+        </div>
+        <div id="inspeccionModal" class="modal">
+            <div class="modal-content">
+                <span class="close" onclick="closeModal('inspeccionModal')">&times;</span>
+                <h2>📝 Registrar Nueva Inspección</h2>
+                <form id="inspeccionForm">
+                    <input type="hidden" id="inspeccionId">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="inspeccionPlantaId">Planta:</label>
+                            <select id="inspeccionPlantaId" required>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="fechaInspeccion">Fecha Inspección:</label>
+                            <input type="date" id="fechaInspeccion" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="inspector">Inspector:</label>
+                            <input type="text" id="inspector" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="estadoInspeccion">Estado de la Inspección:</label>
+                            <select id="estadoInspeccion" required>
+                                <option value="Aprobada">Aprobada</option>
+                                <option value="Con Observaciones">Con Observaciones</option>
+                                <option value="Incumplimiento">Incumplimiento</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="observacionesInspeccion">Observaciones Detalladas:</label>
+                            <textarea id="observacionesInspeccion" rows="4"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="accionesRecomendadas">Acciones Recomendadas:</label>
+                            <textarea id="accionesRecomendadas" rows="4"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="fechaProximaInspeccion">Fecha Próxima Inspección:</label>
+                            <input type="date" id="fechaProximaInspeccion">
+                        </div>
+                    </div>
+                    <button type="submit" class="btn">💾 Guardar Inspección</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
