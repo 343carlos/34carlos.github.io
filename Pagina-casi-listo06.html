@@ -1,0 +1,2236 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Fiscalización de Plantas Metalúrgicas Mineras - Potosí</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.css" integrity="sha512-xodZBNTC5n17Xt2atTPvknvLkzZjemniIB9ymm1jbXHjjgJskDKKG+6IEa+zH0lJMGaHLXyyyhQM6+nzf+dAYw==" crossorigin="" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        /* CSS Mejorado */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #58bd4c 0%, #1a6b12 100%); /* Degradado de fondo más suave */
+            min-height: 100vh;
+            color: #333;
+            line-height: 1.6;
+            display: flex; /* Para centrar el login */
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 20px auto;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.98); /* Fondo casi opaco para el contenedor */
+            border-radius: 18px; /* Bordes más redondeados */
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15); /* Sombra más pronunciada */
+            backdrop-filter: blur(8px); /* Efecto de desenfoque */
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.3); /* Borde sutil */
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            background: radial-gradient(transparent, #007bff, #3b3dc2, #e67e22); /* Degradado azul para el encabezado */
+            padding: 25px;
+            border-radius: 15px;
+            image-rendering: auto;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            color: rgb(29, 28, 28); /* Texto negro para el encabezado */
+        }
+
+        .header h1 {
+            font-size: 2.5em; /* Tamaño de fuente más grande */
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 6px rgba(0, 0, 0, 0.2); /* Sombra de texto más suave */
+            background: linear-gradient(to right, #303030, #1f1e1e); /* Degradado blanco para el título */
+            -webkit-background-clip: text;
+            color: transparent;
+        }
+
+        .header p {
+            font-size: 1.3em; /* Tamaño de fuente ligeramente más grande */
+            opacity: 0.9;
+        }
+
+        .nav-tabs {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 30px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 15px;
+            padding: 10px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            flex-wrap: wrap;
+        }
+
+        .nav-tab {
+            padding: 15px 25px;
+            margin: 5px;
+            background: transparent;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            color: #666;
+            white-space: nowrap;
+            display: flex; /* Para centrar el ícono y el texto */
+            align-items: center;
+            gap: 8px; /* Espacio entre ícono y texto */
+        }
+
+        .nav-tab.active {
+            background: linear-gradient(135deg, #258D19 0%, #1a6b12 100%); /* Degradado verde para tab activo */
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(37, 141, 25, 0.4);
+        }
+
+        .nav-tab:hover:not(.active) {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            background-color: rgba(0, 0, 0, 0.05); /* Ligerísimo fondo al pasar el mouse */
+        }
+
+        .tab-content {
+            display: none;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        h2 {
+            color: #0056b3; /* Color azul para subtítulos */
+            margin-bottom: 25px;
+            text-align: center;
+            font-size: 2em;
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); /* Columnas más flexibles */
+            gap: 20px; /* Espaciado entre elementos */
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 15px;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            padding: 12px; /* Mayor padding */
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 15px;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+            background-color: #fcfcfc; /* Fondo ligero para inputs */
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #258D19;
+            box-shadow: 0 0 0 4px rgba(37, 141, 25, 0.2); /* Sombra más notoria al enfocar */
+        }
+
+        .btn {
+            padding: 12px 25px;
+            background: linear-gradient(135deg, #258D19 0%, #1a6b12 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 5px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn:hover {
+            transform: translateY(-3px); /* Efecto de elevación más pronunciado */
+            box-shadow: 0 6px 20px rgba(37, 141, 25, 0.5); /* Sombra más intensa al pasar el mouse */
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+        }
+
+        .btn-info {
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+        }
+
+        .btn-small {
+            padding: 8px 15px;
+            font-size: 14px;
+        }
+
+        .toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .toolbar-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .input-actions {
+            display: flex;
+            gap: 20px; /* Más espacio entre tarjetas */
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .input-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 6px 25px rgba(0, 0, 0, 0.1);
+            flex: 1;
+            min-width: 320px;
+            text-align: center;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            border-bottom: 5px solid #258D19; /* Borde inferior para estilo */
+        }
+        
+        .input-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 35px rgba(0, 0, 0, 0.2);
+        }
+
+        .input-card h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-size: 1.4em;
+        }
+
+        .input-card p {
+            color: #666;
+            margin-bottom: 25px;
+            font-size: 15px;
+        }
+
+        .input-icon {
+            font-size: 56px; /* Íconos más grandes */
+            margin-bottom: 20px;
+            display: block;
+        }
+
+        .icon-individual {
+            color: #007bff; /* Azul para ícono individual */
+        }
+
+        .icon-excel {
+            color: #28a745; /* Verde para ícono excel */
+        }
+
+        #map {
+            height: 600px; /* Altura del mapa incrementada */
+            border-radius: 15px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+            margin-top: 20px;
+            border: 1px solid #ddd;
+        }
+
+        .plantas-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(400px, 1fr)); /* Tarjetas más grandes */
+            gap: 25px;
+            margin-top: 20px;
+        }
+
+        .planta-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 6px 25px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            border-left: 6px solid #258D19; /* Borde más grueso */
+        }
+
+        .planta-card:hover {
+            transform: translateY(-8px); /* Elevación más notable */
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        .planta-card h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-size: 1.5em;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .planta-card p {
+            margin: 10px 0;
+            color: #555;
+            font-size: 15px;
+        }
+
+        .planta-card .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 8px 0;
+            padding: 2px 0;
+        }
+
+        .planta-card .info-label {
+            font-weight: 600;
+            color: #2c3e50;
+            flex-basis: 40%; /* Controlar el ancho de la etiqueta */
+        }
+        
+        .planta-card .info-value {
+            flex-basis: 60%;
+            text-align: right;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 6px 15px;
+            border-radius: 25px;
+            font-size: 13px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.7px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .status-operativa {
+            background: linear-gradient(45deg, #d4edda, #cce5d4);
+            color: #155724;
+        }
+
+        .status-suspendida {
+            background: linear-gradient(45deg, #f8d7da, #f5c2c7);
+            color: #721c24;
+        }
+
+        .status-observaciones {
+            background: linear-gradient(45deg, #fff3cd, #ffeec0);
+            color: #856404;
+        }
+
+        .status-sin-actividad {
+            background: linear-gradient(45deg, #e2e3e5, #d6d8db);
+            color: #495057;
+        }
+
+        .plant-icon {
+            font-size: 28px; /* Íconos de tarjeta más grandes */
+            margin-right: 8px;
+        }
+
+        .icon-operativa {
+            color: #27ae60;
+        }
+
+        .icon-suspendida {
+            color: #e74c3c;
+        }
+
+        .icon-sin-actividad {
+            color: #95a5a6;
+        }
+
+        .icon-warning {
+            color: #f39c12; /* Color para el estado "En Observaciones" */
+        }
+
+        .alertas-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 25px;
+        }
+
+        .alerta-card {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 6px 25px rgba(255, 107, 107, 0.3);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .alerta-card.warning {
+            background: linear-gradient(135deg, #ffa726 0%, #ff9800 100%);
+            box-shadow: 0 6px 25px rgba(255, 167, 38, 0.3);
+        }
+
+        .alerta-card.success {
+            background: linear-gradient(135deg, #66bb6a 0%, #4caf50 100%);
+            box-shadow: 0 6px 25px rgba(102, 187, 106, 0.3);
+        }
+        
+        .alerta-card h3 {
+            color: white;
+            font-size: 1.6em;
+            margin-bottom: 15px;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.2);
+        }
+
+        .alerta-card p {
+            color: white;
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 6px 25px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+            border-bottom: 4px solid #007bff; /* Borde para el stat card */
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+        }
+
+        .stat-number {
+            font-size: 3em; /* Números más grandes */
+            font-weight: bold;
+            color: #258D19;
+            margin-bottom: 10px;
+            text-shadow: 1px 1px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-label {
+            color: #666;
+            font-weight: 600;
+            font-size: 1.1em;
+        }
+
+        .search-bar {
+            margin-bottom: 20px;
+        }
+
+        .search-bar input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+            background-color: #fcfcfc;
+        }
+
+        .search-bar input:focus {
+            outline: none;
+            border-color: #258D19;
+            box-shadow: 0 0 0 4px rgba(37, 141, 25, 0.2);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6); /* Fondo más oscuro para el modal */
+            z-index: 1000;
+            overflow-y: auto; /* Para que el contenido del modal sea scrollable */
+        }
+
+        .modal-content {
+            position: relative; /* Cambiado a relative para el centrado */
+            margin: 50px auto; /* Centrado vertical y horizontal */
+            background: white;
+            border-radius: 18px; /* Más redondeado */
+            padding: 35px;
+            max-width: 900px; /* Ancho máximo aumentado */
+            width: 90%;
+            box-shadow: 0 12px 50px rgba(0, 0, 0, 0.3);
+            animation: slideInFromTop 0.4s ease-out; /* Animación de entrada */
+        }
+
+        @keyframes slideInFromTop {
+            from { transform: translateY(-50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .close {
+            position: absolute;
+            top: 20px;
+            right: 25px;
+            font-size: 32px; /* Más grande */
+            font-weight: bold;
+            cursor: pointer;
+            color: #888;
+            transition: color 0.3s ease;
+        }
+
+        .close:hover {
+            color: #333;
+        }
+
+        .responsive-table {
+            overflow-x: auto;
+            border-radius: 12px; /* Tabla más redondeada */
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        }
+
+        .responsive-table table {
+            width: 100%;
+            border-collapse: collapse;
+            overflow: hidden;
+        }
+
+        .responsive-table th,
+        .responsive-table td {
+            padding: 15px; /* Mayor padding en celdas */
+            text-align: left;
+            border-bottom: 1px solid #e9ecef; /* Color de borde más claro */
+            font-size: 15px;
+            vertical-align: middle;
+        }
+
+        .responsive-table th {
+            background: linear-gradient(135deg, #258D19 0%, #1a6b12 100%);
+            color: white;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .responsive-table tr:nth-child(even) {
+            background-color: #f8f9fa; /* Rayas para legibilidad */
+        }
+
+        .responsive-table tr:hover {
+            background: #eef2f5; /* Color al pasar el mouse */
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .file-input-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 25px;
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+            color: white;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .file-input-label:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(52, 152, 219, 0.5);
+        }
+
+        .export-buttons {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .pending-inspections {
+            background: #fff8e1; /* Fondo más suave para advertencias */
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            border-left: 5px solid #ffc107;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .pending-inspections h4 {
+            color: #856404;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+
+        .pending-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .pending-list li {
+            padding: 10px 0;
+            border-bottom: 1px solid #f0f0f0;
+            color: #666;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .pending-list li:last-child {
+            border-bottom: none;
+        }
+
+        .success-message {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #27ae60;
+            display: none;
+            font-weight: 600;
+        }
+
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #e74c3c;
+            display: none;
+            font-weight: 600;
+        }
+
+        /* Estilos para el formulario de login */
+        #loginContainer {
+            background: rgba(255, 255, 255, 0.98);
+            padding: 40px;
+            border-radius: 18px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            text-align: center;
+            max-width: 450px;
+            width: 90%;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        #loginContainer h2 {
+            color: #258D19;
+            margin-bottom: 25px;
+            font-size: 2.2em;
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        #loginContainer .form-group {
+            margin-bottom: 15px;
+        }
+
+        #loginContainer .form-group label {
+            text-align: left;
+            margin-bottom: 10px;
+            font-size: 1em;
+            color: #555;
+        }
+
+        #loginContainer .form-group input {
+            width: calc(100% - 24px); /* Ancho completo menos padding */
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1.1em;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+            background-color: #fcfcfc;
+        }
+
+        #loginContainer .form-group input:focus {
+            border-color: #258D19;
+            box-shadow: 0 0 0 4px rgba(37, 141, 25, 0.2);
+        }
+
+        #loginButton {
+            width: 100%;
+            padding: 15px;
+            font-size: 1.2em;
+            margin-top: 20px;
+        }
+
+        #loginError {
+            color: #e74c3c;
+            margin-top: 15px;
+            font-weight: 600;
+            display: none;
+        }
+
+        /* Media Queries para Responsividad */
+        @media (max-width: 992px) {
+            .container {
+                margin: 15px auto;
+                padding: 15px;
+            }
+            .header h1 {
+                font-size: 2em;
+            }
+            .header p {
+                font-size: 1.1em;
+            }
+            .nav-tab {
+                padding: 12px 20px;
+                font-size: 15px;
+            }
+            h2 {
+                font-size: 1.8em;
+            }
+            .form-grid {
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                gap: 15px;
+            }
+            .input-card {
+                min-width: 280px;
+            }
+            #map {
+                height: 500px;
+            }
+            .plantas-list {
+                grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+                gap: 20px;
+            }
+            .planta-card h3 {
+                font-size: 1.3em;
+            }
+            .planta-card p, .planta-card .info-row span {
+                font-size: 14px;
+            }
+            .status-badge {
+                font-size: 11px;
+            }
+            .alerta-card h3 {
+                font-size: 1.4em;
+            }
+            .alerta-card p {
+                font-size: 1em;
+            }
+            .stats-grid {
+                grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+                gap: 15px;
+            }
+            .stat-number {
+                font-size: 2.5em;
+            }
+            .stat-label {
+                font-size: 1em;
+            }
+            .modal-content {
+                width: 95%;
+                padding: 25px;
+            }
+            .close {
+                font-size: 28px;
+            }
+            .responsive-table th, .responsive-table td {
+                padding: 10px;
+                font-size: 13px;
+            }
+            #loginContainer {
+                padding: 30px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .nav-tabs {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .nav-tab {
+                margin: 3px 0;
+                text-align: center;
+                justify-content: center;
+            }
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+            .plantas-list {
+                grid-template-columns: 1fr;
+            }
+            .toolbar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .toolbar-group {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .input-actions {
+                flex-direction: column;
+                gap: 15px;
+            }
+            .input-card {
+                min-width: unset;
+                width: 100%;
+            }
+            .export-buttons {
+                flex-direction: column;
+                gap: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="loginContainer">
+        <h2>Bienvenido</h2>
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="username">Usuario:</label>
+                <input type="text" id="username" required>
+            </div>
+            <div class="form-group">
+                <label for="password">Contraseña:</label>
+                <input type="password" id="password" required>
+            </div>
+            <button type="submit" class="btn" id="loginButton">Iniciar Sesión</button>
+            <div id="loginError" class="error-message"></div>
+        </form>
+    </div>
+
+    <div id="mainContent" style="display: none;">
+        <div class="container">
+            <div class="header">
+                <h1>🏭 Sistema de Control y Fiscalización de Plantas Metalúrgicas Mineras</h1>
+                <p>Gobierno Autónomo Departamental de Potosí</p>
+            </div>
+
+            <div class="nav-tabs">
+                <button class="nav-tab active" onclick="showTab('dashboard')">📊 Panel</button>
+                <button class="nav-tab" onclick="showTab('mapa')">🗺️ Mapa GIS</button>
+                <button class="nav-tab" onclick="showTab('plantas')">🏭 Plantas</button>
+                <button class="nav-tab" onclick="showTab('inspecciones')">🔍 Inspecciones</button>
+                <button class="nav-tab" onclick="showTab('alertas')">⚠️ Alertas</button>
+                <button class="nav-tab" onclick="showTab('reportes')">📋 Reportes</button>
+            </div>
+
+            <div id="dashboard" class="tab-content active">
+                <h2>📊 Panel de Control</h2>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-number" id="totalPlantas">0</div>
+                        <div class="stat-label">Total Plantas</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="plantasOperativas">0</div>
+                        <div class="stat-label">🟢 Operativas</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="plantasSuspendidas">0</div>
+                        <div class="stat-label">🔴 Suspendidas</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="plantasSinActividad">0</div>
+                        <div class="stat-label">⚫ Sin Actividad</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="documentosVencidos">0</div>
+                        <div class="stat-label">📋 Docs. Vencidos</div>
+                    </div>
+                </div>
+
+                <div class="pending-inspections">
+                    <h4>🔍 Inspecciones Pendientes</h4>
+                    <ul id="pendingInspectionsList" class="pending-list"></ul>
+                </div>
+                
+                <div class="alertas-container">
+                    <div class="alerta-card">
+                        <h3>🚨 Inspecciones Pendientes</h3>
+                        <p id="inspeccionesPendientes">0 plantas requieren inspección</p>
+                    </div>
+                    <div class="alerta-card warning">
+                        <h3>⏰ Documentos por Vencer</h3>
+                        <p id="documentosPorVencer">0 documentos vencen en 30 días</p>
+                    </div>
+                    <div class="alerta-card success">
+                        <h3>✅ Cumplimiento</h3>
+                        <p id="cumplimiento">0% plantas en regla</p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="mapa" class="tab-content">
+                <h2>🗺️ Mapa Georreferenciado de Plantas</h2>
+                <div id="map"></div>
+            </div>
+
+            <div id="plantas" class="tab-content">
+                <h2>🏭 Registro de Plantas Metalúrgicas</h2>
+                
+                <div class="success-message" id="successMessage"></div>
+                <div class="error-message" id="errorMessage"></div>
+                
+                <div class="input-actions">
+                    <div class="input-card">
+                        <span class="input-icon icon-individual">👤</span>
+                        <h3>Registro Individual</h3>
+                        <p>Agrega una planta metalúrgica de forma individual con todos sus datos</p>
+                        <button class="btn" onclick="showModal('plantaModal')">
+                            ➕ Agregar Nueva Planta
+                        </button>
+                    </div>
+                    
+                    <div class="input-card">
+                        <span class="input-icon icon-excel">📊</span>
+                        <h3>Importación Masiva</h3>
+                        <p>Importa múltiples plantas desde un archivo Excel (.xlsx, .xls)</p>
+                        <label for="excelFile" class="file-input-label">
+                            📁 Seleccionar Archivo Excel
+                        </label>
+                        <input type="file" id="excelFile" class="file-input" accept=".xlsx,.xls" onchange="importFromExcel(event)">
+                        <small style="color: #666; display: block; margin-top: 10px;">
+                            Formatos soportados: .xlsx, .xls
+                        </small>
+                    </div>
+                </div>
+
+                <div class="toolbar">
+                    <div class="toolbar-group">
+                        <button class="btn btn-success" onclick="exportToExcel('plantas')">
+                            📊 Exportar Excel
+                        </button>
+                        <button class="btn btn-info" onclick="exportToPDF('plantas')">
+                            📄 Exportar PDF
+                        </button>
+                        <button class="btn btn-warning" onclick="downloadTemplate()">
+                            📋 Descargar Plantilla Excel
+                        </button>
+                    </div>
+                </div>
+
+                <div class="search-bar">
+                    <input type="text" id="searchPlantas" placeholder="🔍 Buscar plantas por nombre, mineral o estado..." onkeyup="searchPlantas()">
+                </div>
+                
+                <div id="plantasList" class="plantas-list">
+                    </div>
+            </div>
+
+            <div id="inspecciones" class="tab-content">
+                <h2>🔍 Registro de Inspecciones</h2>
+                
+                <div class="toolbar">
+                    <div class="toolbar-group">
+                        <button class="btn" onclick="showModal('inspeccionModal')">
+                            📝 Nueva Inspección
+                        </button>
+                    </div>
+                    <div class="toolbar-group">
+                        <button class="btn btn-success" onclick="exportToExcel('inspecciones')">
+                            📊 Exportar Excel
+                        </button>
+                        <button class="btn btn-info" onclick="exportToPDF('inspecciones')">
+                            📄 Exportar PDF
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="responsive-table">
+                    <table id="inspeccionesTable">
+                        <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Planta</th>
+                                <th>Inspector</th>
+                                <th>Estado</th>
+                                <th>Observaciones</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="inspeccionesBody">
+                            </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="alertas" class="tab-content">
+                <h2>⚠️ Sistema de Alertas</h2>
+                
+                <div class="alertas-container">
+                    <div class="alerta-card">
+                        <h3>🚨 Documentos Vencidos</h3>
+                        <div id="documentosVencidosLista"></div>
+                    </div>
+                    <div class="alerta-card warning">
+                        <h3>⏰ Próximos Vencimientos</h3>
+                        <div id="proximosVencimientos"></div>
+                    </div>
+                    <div class="alerta-card">
+                        <h3>🔍 Inspecciones Atrasadas</h3>
+                        <div id="inspeccionesAtrasadas"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="reportes" class="tab-content">
+                <h2>📋 Reportes y Exportaciones</h2>
+                
+                <div class="export-buttons">
+                    <button class="btn btn-success" onclick="exportPendingInspections()">
+                        📊 Exportar Inspecciones Pendientes
+                    </button>
+                    <button class="btn btn-info" onclick="exportExpiredDocuments()">
+                        📄 Exportar Documentos Vencidos
+                    </button>
+                    <button class="btn btn-warning" onclick="exportPlantStatus()">
+                        📋 Exportar Estado de Plantas
+                    </button>
+                    <button class="btn btn-secondary" onclick="exportFullReport()">
+                        📃 Reporte Completo
+                    </button>
+                </div>
+                
+                <div class="pending-inspections">
+                    <h4>🔍 Plantas Pendientes de Inspección</h4>
+                    <ul id="reportPendingList" class="pending-list"></ul>
+                </div>
+                
+                <div class="responsive-table">
+                    <h3>📊 Resumen de Capacidades por Mineral</h3>
+                    <table id="capacidadesTable">
+                        <thead>
+                            <tr>
+                                <th>Mineral</th>
+                                <th>Plantas</th>
+                                <th>Capacidad Real (TM/día)</th>
+                                <th>Capacidad Operada (TM/día)</th>
+                                <th>% Utilización</th>
+                            </tr>
+                        </thead>
+                        <tbody id="capacidadesBody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div id="plantaModal" class="modal">
+            <div class="modal-content">
+                <span class="close" onclick="closeModal('plantaModal')">&times;</span>
+                <h2>➕ Agregar Nueva Planta</h2>
+                <form id="plantaForm">
+                    <input type="hidden" id="plantaId">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="nombrePlanta">Nombre/Razón Social:</label>
+                            <input type="text" id="nombrePlanta" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="representanteLegal">Representante Legal:</label>
+                            <input type="text" id="representanteLegal" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="nit">NIT:</label>
+                            <input type="text" id="nit" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="direccion">Dirección:</label>
+                            <input type="text" id="direccion" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="telefono">Teléfono:</label>
+                            <input type="text" id="telefono" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="latitud">Latitud:</label>
+                            <input type="number" id="latitud" step="any" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="longitud">Longitud:</label>
+                            <input type="number" id="longitud" step="any" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="procedencia">Procedencia del Mineral:</label>
+                            <input type="text" id="procedencia" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="destino">Destino del Mineral:</label>
+                            <input type="text" id="destino" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="actividad">Actividad:</label>
+                            <select id="actividad" required>
+                                <option value="">Seleccione</option>
+                                <option value="Concentración">Concentración</option>
+                                <option value="Fundición">Fundición</option>
+                                <option value="Refinación">Refinación</option>
+                                <option value="Lixiviación">Lixiviación</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="mineralPrincipal">Mineral Principal:</label>
+                            <select id="mineralPrincipal" required>
+                                <option value="">Seleccione</option>
+                                <option value="Ag Pb Zn">Ag Pb Zn</option>
+                                <option value="Sn">Sn</option>
+                                <option value="Cu">Cu</option>
+                                <option value="W">W</option>
+                                <option value="Au">Au</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="capacidadReal">Capacidad Real (TM/día):</label>
+                            <input type="number" id="capacidadAutorizada" step="0.01" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="capacidadOperada">Capacidad Operada (TM/día):</label>
+                            <input type="number" id="capacidadOperada" step="0.01">
+                        </div>
+                        <div class="form-group">
+                            <label for="fechaUltimaInspeccion">Fecha Última Inspección:</label>
+                            <input type="date" id="fechaUltimaInspeccion">
+                        </div>
+                        <div class="form-group">
+                            <label for="estado">Estado:</label>
+                            <select id="estado" required>
+                                <option value="Operativa">Operativa</option>
+                                <option value="Suspendida">Suspendida</option>
+                                <option value="Sin Actividad">Sin Actividad</option>
+                                <option value="En Observaciones">En Observaciones</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="licenciaAmbiental">Licencia Ambiental:</label>
+                            <input type="text" id="licenciaAmbiental">
+                        </div>
+                        <div class="form-group">
+                            <label for="licenciadeFuncionamiento">Licencia de Funcionamiento:</label>
+                            <input type="text" id="licenciadeFuncionamiento">
+                        </div>
+                        <div class="form-group">
+                            <label for="empadronamientominero">Empadronamiento Minero:</label>
+                            <input type="text" id="empadronamientominero">
+                        </div>
+                        <div class="form-group">
+                            <label for="observacionesPlanta">Observaciones:</label>
+                            <textarea id="observacionesPlanta" rows="3"></textarea>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn">💾 Guardar Planta</button>
+                </form>
+            </div>
+        </div>
+
+        <div id="inspeccionModal" class="modal">
+            <div class="modal-content">
+                <span class="close" onclick="closeModal('inspeccionModal')">&times;</span>
+                <h2>📝 Registrar Nueva Inspección</h2>
+                <form id="inspeccionForm">
+                    <input type="hidden" id="inspeccionId">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="inspeccionPlantaId">Planta:</label>
+                            <select id="inspeccionPlantaId" required>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="fechaInspeccion">Fecha Inspección:</label>
+                            <input type="date" id="fechaInspeccion" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="inspector">Inspector:</label>
+                            <input type="text" id="inspector" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="estadoInspeccion">Estado de la Inspección:</label>
+                            <select id="estadoInspeccion" required>
+                                <option value="Aprobada">Aprobada</option>
+                                <option value="Con Observaciones">Con Observaciones</option>
+                                <option value="Incumplimiento">Incumplimiento</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="observacionesInspeccion">Observaciones Detalladas:</label>
+                            <textarea id="observacionesInspeccion" rows="4"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="accionesRecomendadas">Acciones Recomendadas:</label>
+                            <textarea id="accionesRecomendadas" rows="4"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="fechaProximaInspeccion">Fecha Próxima Inspección:</label>
+                            <input type="date" id="fechaProximaInspeccion">
+                        </div>
+                    </div>
+                    <button type="submit" class="btn">💾 Guardar Inspección</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.3.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.1.0/html2canvas.min.js"></script>
+    <script>
+        // Variables globales para almacenar datos
+        let plantas = JSON.parse(localStorage.getItem('plantas')) || [];
+        let inspecciones = JSON.parse(localStorage.getItem('inspecciones')) || [];
+        let map;
+        let markers = L.featureGroup(); // Grupo para manejar todos los marcadores
+
+        // --- Funcionalidad de Login ---
+        function handleLogin(event) {
+            event.preventDefault();
+            const usernameInput = document.getElementById('username').value;
+            const passwordInput = document.getElementById('password').value;
+            const loginError = document.getElementById('loginError');
+
+            // Credenciales de ejemplo (¡EN UN ENTORNO REAL, ESTO SERÍA EN EL SERVIDOR!)
+            const validUsername = 'robert';
+            const validPassword = 'password987';
+
+            if (usernameInput === validUsername && passwordInput === validPassword) {
+                sessionStorage.setItem('loggedIn', 'true');
+                document.getElementById('loginContainer').style.display = 'none';
+                document.getElementById('mainContent').style.display = 'block';
+                showTab('dashboard'); // Mostrar el dashboard por defecto al iniciar sesión
+            } else {
+                loginError.textContent = 'Usuario o contraseña incorrectos.';
+                loginError.style.display = 'block';
+            }
+        }
+
+        function checkLogin() {
+            if (sessionStorage.getItem('loggedIn') === 'true') {
+                document.getElementById('loginContainer').style.display = 'none';
+                document.getElementById('mainContent').style.display = 'block';
+                showTab('dashboard'); // Mostrar el dashboard si ya está logueado
+            } else {
+                document.getElementById('loginContainer').style.display = 'flex';
+                document.getElementById('mainContent').style.display = 'none';
+            }
+        }
+
+        document.getElementById('loginForm').addEventListener('submit', handleLogin);
+
+        // --- Funcionalidad General de la UI ---
+        function showTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.getElementById(tabId).classList.add('active');
+            document.querySelectorAll('.nav-tab').forEach(tabButton => {
+                tabButton.classList.remove('active');
+            });
+            document.querySelector(`.nav-tab[onclick="showTab('${tabId}')"]`).classList.add('active');
+
+            // Si se activa el mapa, asegurar que se inicialice y se actualicen los marcadores
+            if (tabId === 'mapa') {
+                if (!map) {
+                    initMap();
+                }
+                // Pequeño retraso para asegurar que el contenedor del mapa sea visible y tenga sus dimensiones correctas.
+                setTimeout(() => {
+                    map.invalidateSize(); // Necesario si el mapa estaba oculto
+                    updateMapMarkers(); // Asegura que los marcadores se actualicen al mostrar el mapa
+                }, 250); // 100 milisegundos de retraso
+            } else {
+                // Si cambiamos de pestaña y el mapa existe, limpiar marcadores para evitar duplicados al volver
+                if (map) {
+                    markers.clearLayers();
+                }
+            }
+            updateDashboard();
+            renderPlantas();
+            renderInspecciones();
+            updateAlerts();
+            renderReportes();
+        }
+
+        function showMessage(type, message) {
+            const successDiv = document.getElementById('successMessage');
+            const errorDiv = document.getElementById('errorMessage');
+
+            if (type === 'success') {
+                successDiv.textContent = message;
+                successDiv.style.display = 'block';
+                errorDiv.style.display = 'none';
+            } else if (type === 'error') {
+                errorDiv.textContent = message;
+                errorDiv.style.display = 'block';
+                successDiv.style.display = 'none';
+            }
+
+            setTimeout(() => {
+                successDiv.style.display = 'none';
+                errorDiv.style.display = 'none';
+            }, 5000); // Ocultar después de 5 segundos
+        }
+
+        function showModal(modalId) {
+            document.getElementById(modalId).style.display = 'block';
+            // Resetear formularios al abrir
+            if (modalId === 'plantaModal') {
+                document.getElementById('plantaForm').reset();
+                document.getElementById('plantaId').value = ''; // Limpiar ID para nuevo registro
+            } else if (modalId === 'inspeccionModal') {
+                document.getElementById('inspeccionForm').reset();
+                document.getElementById('inspeccionId').value = ''; // Limpiar ID para nuevo registro
+                populatePlantasForInspeccion(); // Llenar el select de plantas
+            }
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+
+        // Cerrar modal al hacer clic fuera del contenido
+        window.onclick = function(event) {
+            if (event.target.classList.contains('modal')) {
+                event.target.style.display = 'none';
+            }
+        }
+
+        // --- Gestión de Plantas ---
+        function savePlantas() {
+            localStorage.setItem('plantas', JSON.stringify(plantas));
+        }
+
+        document.getElementById('plantaForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const id = document.getElementById('plantaId').value;
+            const nombrePlanta = document.getElementById('nombrePlanta').value;
+            const representanteLegal = document.getElementById('representanteLegal').value;
+            const nit = document.getElementById('nit').value;
+            const direccion = document.getElementById('direccion').value;
+            const telefono = document.getElementById('telefono').value;
+            const latitud = parseFloat(document.getElementById('latitud').value);
+            const longitud = parseFloat(document.getElementById('longitud').value);
+            const procedencia = document.getElementById('procedencia').value;
+            const destino = document.getElementById('destino').value;
+            const actividad = document.getElementById('actividad').value;
+            const mineralPrincipal = document.getElementById('mineralPrincipal').value;
+            const capacidadReal = parseFloat(document.getElementById('capacidadAutorizada').value); // Corregido a capacidadAutorizada
+            const capacidadOperada = parseFloat(document.getElementById('capacidadOperada').value) || 0;
+            const fechaUltimaInspeccion = document.getElementById('fechaUltimaInspeccion').value;
+            const estado = document.getElementById('estado').value;
+            const licenciaAmbiental = document.getElementById('licenciaAmbiental').value;
+            const licenciadeFuncionamiento = document.getElementById('licenciadeFuncionamiento').value;
+            const empadronamientominero = document.getElementById('empadronamientominero').value;
+            const observacionesPlanta = document.getElementById('observacionesPlanta').value;
+
+            if (id) {
+                // Editar planta existente
+                const index = plantas.findIndex(p => p.id === id);
+                if (index !== -1) {
+                    plantas[index] = { ...plantas[index], nombrePlanta, representanteLegal, nit, direccion, telefono, latitud, longitud, procedencia, destino, actividad, mineralPrincipal, capacidadReal, capacidadOperada, fechaUltimaInspeccion, estado, licenciaAmbiental, licenciadeFuncionamiento, empadronamientominero, observacionesPlanta };
+                    showMessage('success', 'Planta actualizada exitosamente.');
+                }
+            } else {
+                // Nueva planta
+                const newPlanta = {
+                    id: Date.now().toString(),
+                    nombrePlanta,
+                    representanteLegal,
+                    nit,
+                    direccion,
+                    telefono,
+                    latitud,
+                    longitud,
+                    procedencia,
+                    destino,
+                    actividad,
+                    mineralPrincipal,
+                    capacidadReal,
+                    capacidadOperada,
+                    fechaUltimaInspeccion,
+                    estado,
+                    licenciaAmbiental,
+                    licenciadeFuncionamiento,
+                    empadronamientominero,
+                    observacionesPlanta
+                };
+                plantas.push(newPlanta);
+                showMessage('success', 'Planta agregada exitosamente.');
+            }
+            savePlantas();
+            renderPlantas();
+            updateMapMarkers(); // Actualizar marcadores después de guardar
+            updateDashboard();
+            updateAlerts();
+            renderReportes();
+            closeModal('plantaModal');
+        });
+
+        function renderPlantas(filter = '') {
+            const plantasList = document.getElementById('plantasList');
+            plantasList.innerHTML = '';
+            const filteredPlantas = plantas.filter(planta =>
+                planta.nombrePlanta.toLowerCase().includes(filter.toLowerCase()) ||
+                planta.mineralPrincipal.toLowerCase().includes(filter.toLowerCase()) ||
+                planta.estado.toLowerCase().includes(filter.toLowerCase())
+            );
+
+            if (filteredPlantas.length === 0) {
+                plantasList.innerHTML = '<p style="text-align: center; color: #777; margin-top: 30px;">No hay plantas registradas o no coinciden con la búsqueda.</p>';
+                return;
+            }
+
+            filteredPlantas.forEach(planta => {
+                const plantaCard = document.createElement('div');
+                plantaCard.classList.add('planta-card');
+
+                let statusClass = '';
+                let statusIcon = '';
+                switch (planta.estado) {
+                    case 'Operativa':
+                        statusClass = 'status-operativa';
+                        statusIcon = 'fa-solid fa-circle-check icon-operativa';
+                        break;
+                    case 'Suspendida':
+                        statusClass = 'status-suspendida';
+                        statusIcon = 'fa-solid fa-circle-xmark icon-suspendida';
+                        break;
+                    case 'Sin Actividad':
+                        statusClass = 'status-sin-actividad';
+                        statusIcon = 'fa-solid fa-circle icon-sin-actividad';
+                        break;
+                    case 'En Observaciones':
+                        statusClass = 'status-observaciones';
+                        statusIcon = 'fa-solid fa-circle-exclamation icon-warning';
+                        break;
+                    default:
+                        statusClass = '';
+                        statusIcon = '';
+                }
+
+                plantaCard.innerHTML = `
+                    <h3><i class="${statusIcon} plant-icon"></i> ${planta.nombrePlanta} <span class="status-badge ${statusClass}">${planta.estado}</span></h3>
+                    <div class="info-row"><span class="info-label">Representante:</span> <span class="info-value">${planta.representanteLegal}</span></div>
+                    <div class="info-row"><span class="info-label">NIT:</span> <span class="info-value">${planta.nit}</span></div>
+                    <div class="info-row"><span class="info-label">Dirección:</span> <span class="info-value">${planta.direccion}</span></div>
+                    <div class="info-row"><span class="info-label">Teléfono:</span> <span class="info-value">${planta.telefono}</span></div>
+                    <div class="info-row"><span class="info-label">Mineral Principal:</span> <span class="info-value">${planta.mineralPrincipal}</span></div>
+                    <div class="info-row"><span class="info-label">Actividad:</span> <span class="info-value">${planta.actividad}</span></div>
+                    <div class="info-row"><span class="info-label">Capacidad Real:</span> <span class="info-value">${planta.capacidadReal || 'N/A'} TM/día</span></div>
+                    <div class="info-row"><span class="info-label">Capacidad Operada:</span> <span class="info-value">${planta.capacidadOperada || '0'} TM/día</span></div>
+                    <div class="info-row"><span class="info-label">Última Inspección:</span> <span class="info-value">${planta.fechaUltimaInspeccion || 'N/A'}</span></div>
+                    <div style="margin-top: 15px; text-align: right;">
+                        <button class="btn btn-small btn-info" onclick="editPlanta('${planta.id}')">
+                            <i class="fas fa-edit"></i> Editar
+                        </button>
+                        <button class="btn btn-small btn-danger" onclick="deletePlanta('${planta.id}')">
+                            <i class="fas fa-trash-alt"></i> Eliminar
+                        </button>
+                    </div>
+                `;
+                plantasList.appendChild(plantaCard);
+            });
+        }
+
+        function searchPlantas() {
+            const filter = document.getElementById('searchPlantas').value;
+            renderPlantas(filter);
+        }
+
+        function editPlanta(id) {
+            const planta = plantas.find(p => p.id === id);
+            if (planta) {
+                document.getElementById('plantaId').value = planta.id;
+                document.getElementById('nombrePlanta').value = planta.nombrePlanta;
+                document.getElementById('representanteLegal').value = planta.representanteLegal;
+                document.getElementById('nit').value = planta.nit;
+                document.getElementById('direccion').value = planta.direccion;
+                document.getElementById('telefono').value = planta.telefono;
+                document.getElementById('latitud').value = planta.latitud;
+                document.getElementById('longitud').value = planta.longitud;
+                document.getElementById('procedencia').value = planta.procedencia;
+                document.getElementById('destino').value = planta.destino;
+                document.getElementById('actividad').value = planta.actividad;
+                document.getElementById('mineralPrincipal').value = planta.mineralPrincipal;
+                document.getElementById('capacidadAutorizada').value = planta.capacidadReal; // Corregido a capacidadAutorizada
+                document.getElementById('capacidadOperada').value = planta.capacidadOperada;
+                document.getElementById('fechaUltimaInspeccion').value = planta.fechaUltimaInspeccion;
+                document.getElementById('estado').value = planta.estado;
+                document.getElementById('licenciaAmbiental').value = planta.licenciaAmbiental;
+                document.getElementById('licenciadeFuncionamiento').value = planta.licenciadeFuncionamiento;
+                document.getElementById('empadronamientominero').value = planta.empadronamientominero;
+                document.getElementById('observacionesPlanta').value = planta.observacionesPlanta;
+                showModal('plantaModal');
+            }
+        }
+
+        function deletePlanta(id) {
+            if (confirm('¿Estás seguro de que quieres eliminar esta planta?')) {
+                plantas = plantas.filter(planta => planta.id !== id);
+                savePlantas();
+                renderPlantas();
+                updateMapMarkers(); // Actualizar marcadores después de eliminar
+                updateDashboard();
+                updateAlerts();
+                renderReportes();
+                showMessage('success', 'Planta eliminada exitosamente.');
+            }
+        }
+
+        // --- Gestión de Inspecciones ---
+        function saveInspecciones() {
+            localStorage.setItem('inspecciones', JSON.stringify(inspecciones));
+        }
+
+        function populatePlantasForInspeccion() {
+            const select = document.getElementById('inspeccionPlantaId');
+            select.innerHTML = '<option value="">Seleccione una Planta</option>';
+            plantas.forEach(planta => {
+                const option = document.createElement('option');
+                option.value = planta.id;
+                option.textContent = planta.nombrePlanta;
+                select.appendChild(option);
+            });
+        }
+
+        document.getElementById('inspeccionForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const id = document.getElementById('inspeccionId').value;
+            const inspeccionPlantaId = document.getElementById('inspeccionPlantaId').value;
+            const fechaInspeccion = document.getElementById('fechaInspeccion').value;
+            const inspector = document.getElementById('inspector').value;
+            const estadoInspeccion = document.getElementById('estadoInspeccion').value;
+            const observacionesInspeccion = document.getElementById('observacionesInspeccion').value;
+            const accionesRecomendadas = document.getElementById('accionesRecomendadas').value;
+            const fechaProximaInspeccion = document.getElementById('fechaProximaInspeccion').value;
+
+            if (id) {
+                // Editar inspección existente
+                const index = inspecciones.findIndex(i => i.id === id);
+                if (index !== -1) {
+                    inspecciones[index] = { ...inspecciones[index], inspeccionPlantaId, fechaInspeccion, inspector, estadoInspeccion, observacionesInspeccion, accionesRecomendadas, fechaProximaInspeccion };
+                    showMessage('success', 'Inspección actualizada exitosamente.');
+                }
+            } else {
+                // Nueva inspección
+                const newInspeccion = {
+                    id: Date.now().toString(),
+                    plantaId: inspeccionPlantaId, // Usar plantaId para consistencia
+                    fecha: fechaInspeccion,
+                    inspector,
+                    estado: estadoInspeccion,
+                    observaciones: observacionesInspeccion,
+                    acciones: accionesRecomendadas,
+                    proximaInspeccion: fechaProximaInspeccion
+                };
+                inspecciones.push(newInspeccion);
+                showMessage('success', 'Inspección registrada exitosamente.');
+
+                // Actualizar la fecha de última inspección de la planta
+                const planta = plantas.find(p => p.id === inspeccionPlantaId);
+                if (planta) {
+                    planta.fechaUltimaInspeccion = fechaInspeccion;
+                    savePlantas(); // Guardar cambios en plantas
+                }
+            }
+            saveInspecciones();
+            renderInspecciones();
+            updateDashboard();
+            updateAlerts();
+            renderReportes();
+            closeModal('inspeccionModal');
+        });
+
+
+        function renderInspecciones() {
+            const inspeccionesBody = document.getElementById('inspeccionesBody');
+            inspeccionesBody.innerHTML = '';
+
+            if (inspecciones.length === 0) {
+                inspeccionesBody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #777; padding: 20px;">No hay inspecciones registradas.</td></tr>';
+                return;
+            }
+
+            inspecciones.forEach(inspeccion => {
+                const planta = plantas.find(p => p.id === inspeccion.plantaId);
+                const plantaNombre = planta ? planta.nombrePlanta : 'Planta Desconocida';
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${inspeccion.fecha}</td>
+                    <td>${plantaNombre}</td>
+                    <td>${inspeccion.inspector}</td>
+                    <td>${inspeccion.estado}</td>
+                    <td>${inspeccion.observaciones}</td>
+                    <td>
+                        <button class="btn btn-small btn-info" onclick="editInspeccion('${inspeccion.id}')">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn btn-small btn-danger" onclick="deleteInspeccion('${inspeccion.id}')">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    </td>
+                `;
+                inspeccionesBody.appendChild(row);
+            });
+        }
+
+        function editInspeccion(id) {
+            const inspeccion = inspecciones.find(i => i.id === id);
+            if (inspeccion) {
+                document.getElementById('inspeccionId').value = inspeccion.id;
+                document.getElementById('inspeccionPlantaId').value = inspeccion.plantaId;
+                document.getElementById('fechaInspeccion').value = inspeccion.fecha;
+                document.getElementById('inspector').value = inspeccion.inspector;
+                document.getElementById('estadoInspeccion').value = inspeccion.estado;
+                document.getElementById('observacionesInspeccion').value = inspeccion.observaciones;
+                document.getElementById('accionesRecomendadas').value = inspeccion.acciones;
+                document.getElementById('fechaProximaInspeccion').value = inspeccion.proximaInspeccion;
+                showModal('inspeccionModal');
+            }
+        }
+
+        function deleteInspeccion(id) {
+            if (confirm('¿Estás seguro de que quieres eliminar esta inspección?')) {
+                inspecciones = inspecciones.filter(inspeccion => inspeccion.id !== id);
+                saveInspecciones();
+                renderInspecciones();
+                updateDashboard();
+                updateAlerts();
+                renderReportes();
+                showMessage('success', 'Inspección eliminada exitosamente.');
+            }
+        }
+
+        // --- Funcionalidad del Mapa GIS ---
+        function initMap() {
+            map = L.map('map').setView([-19.5833, -65.75], 13); // Coordenadas de Potosí, Bolivia
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            }).addTo(map);
+
+            markers.addTo(map); // Añadir el grupo de marcadores al mapa
+        }
+
+        function updateMapMarkers() {
+            markers.clearLayers(); // Limpiar marcadores existentes
+
+            plantas.forEach(planta => {
+                if (planta.latitud && planta.longitud) {
+                    const marker = L.marker([planta.latitud, planta.longitud]).bindPopup(
+                        `<b>${planta.nombrePlanta}</b><br>
+                        Estado: ${planta.estado}<br>
+                        Mineral: ${planta.mineralPrincipal}<br>
+                        Capacidad: ${planta.capacidadReal || 'N/A'} TM/día`
+                    );
+                    markers.addLayer(marker);
+                }
+            });
+            // Ajustar el mapa para que todos los marcadores sean visibles
+            if (markers.getLayers().length > 0) {
+                map.fitBounds(markers.getBounds());
+            }
+        }
+
+        // --- Funcionalidad del Dashboard ---
+        function updateDashboard() {
+            document.getElementById('totalPlantas').textContent = plantas.length;
+            document.getElementById('plantasOperativas').textContent = plantas.filter(p => p.estado === 'Operativa').length;
+            document.getElementById('plantasSuspendidas').textContent = plantas.filter(p => p.estado === 'Suspendida').length;
+            document.getElementById('plantasSinActividad').textContent = plantas.filter(p => p.estado === 'Sin Actividad').length;
+
+            // Contar documentos vencidos (ejemplo: licencia ambiental)
+            const today = new Date();
+            let vencidosCount = 0;
+            plantas.forEach(planta => {
+                // Aquí se podría implementar una lógica más compleja para fechas de vencimiento de documentos
+                // Por simplicidad, este es un placeholder
+                if (planta.licenciaAmbiental && planta.licenciaAmbiental.includes('VENCE')) { // Solo un ejemplo
+                     vencidosCount++;
+                }
+            });
+            document.getElementById('documentosVencidos').textContent = vencidosCount;
+
+            updatePendingInspectionsList();
+        }
+
+        function updatePendingInspectionsList() {
+            const pendingList = document.getElementById('pendingInspectionsList');
+            pendingList.innerHTML = '';
+            let hasPending = false;
+            const today = new Date();
+
+            plantas.forEach(planta => {
+                if (planta.fechaUltimaInspeccion) {
+                    const lastInspectionDate = new Date(planta.fechaUltimaInspeccion);
+                    const diffTime = Math.abs(today - lastInspectionDate);
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                    // Ejemplo: Si la última inspección fue hace más de 180 días (6 meses)
+                    if (diffDays > 180) {
+                        const li = document.createElement('li');
+                        li.innerHTML = `<i class="fa-solid fa-clock-rotate-left"></i> La planta <strong>${planta.nombrePlanta}</strong> requiere inspección. Última: ${planta.fechaUltimaInspeccion}`;
+                        pendingList.appendChild(li);
+                        hasPending = true;
+                    }
+                } else if (planta.estado !== 'Sin Actividad') { // Si no tiene fecha y no está "Sin Actividad"
+                     const li = document.createElement('li');
+                     li.innerHTML = `<i class="fa-solid fa-file-circle-question"></i> La planta <strong>${planta.nombrePlanta}</strong> no tiene registro de última inspección.`;
+                     pendingList.appendChild(li);
+                     hasPending = true;
+                }
+            });
+
+            if (!hasPending) {
+                pendingList.innerHTML = '<li><i class="fa-solid fa-check-circle" style="color: #28a745;"></i> No hay plantas pendientes de inspección.</li>';
+            }
+        }
+
+
+        // --- Gestión de Alertas ---
+        function updateAlerts() {
+            const documentosVencidosLista = document.getElementById('documentosVencidosLista');
+            const proximosVencimientos = document.getElementById('proximosVencimientos');
+            const inspeccionesAtrasadas = document.getElementById('inspeccionesAtrasadas');
+
+            documentosVencidosLista.innerHTML = '';
+            proximosVencimientos.innerHTML = '';
+            inspeccionesAtrasadas.innerHTML = '';
+
+            let docsVencidosCount = 0;
+            let proximosVencCount = 0;
+            let inspAtrasadasCount = 0;
+            const today = new Date();
+            const thirtyDaysFromNow = new Date();
+            thirtyDaysFromNow.setDate(today.getDate() + 30);
+
+            plantas.forEach(planta => {
+                // Lógica de documentos vencidos (ejemplo simplificado)
+                // Aquí iría la lógica real de fechas de vencimiento para licenciaAmbiental, etc.
+                // Por ahora, un placeholder
+                if (planta.licenciaAmbiental && planta.licenciaAmbiental.toLowerCase().includes('vencida')) {
+                    const p = document.createElement('p');
+                    p.innerHTML = `<i class="fa-solid fa-file-excel"></i> Licencia ambiental vencida para <strong>${planta.nombrePlanta}</strong>`;
+                    documentosVencidosLista.appendChild(p);
+                    docsVencidosCount++;
+                }
+
+                // Lógica de próximos vencimientos (ejemplo simplificado)
+                if (planta.licenciadeFuncionamiento && planta.licenciadeFuncionamiento.toLowerCase().includes('por vencer')) {
+                     const p = document.createElement('p');
+                    p.innerHTML = `<i class="fa-solid fa-hourglass-half"></i> Licencia de funcionamiento de <strong>${planta.nombrePlanta}</strong> está por vencer.`;
+                    proximosVencimientos.appendChild(p);
+                    proximosVencCount++;
+                }
+
+                // Lógica de inspecciones atrasadas
+                if (planta.fechaUltimaInspeccion) {
+                    const lastInspectionDate = new Date(planta.fechaUltimaInspeccion);
+                    const diffTime = Math.abs(today - lastInspectionDate);
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                    if (diffDays > 365 && planta.estado !== 'Sin Actividad') { // Más de un año sin inspección
+                        const p = document.createElement('p');
+                        p.innerHTML = `<i class="fa-solid fa-calendar-times"></i> La inspección de <strong>${planta.nombrePlanta}</strong> está atrasada. Última: ${planta.fechaUltimaInspeccion}`;
+                        inspeccionesAtrasadas.appendChild(p);
+                        inspAtrasadasCount++;
+                    }
+                } else if (planta.estado !== 'Sin Actividad') {
+                     const p = document.createElement('p');
+                     p.innerHTML = `<i class="fa-solid fa-question-circle"></i> <strong>${planta.nombrePlanta}</strong> no tiene registro de inspecciones.`;
+                     inspeccionesAtrasadas.appendChild(p);
+                     inspAtrasadasCount++;
+                }
+            });
+
+            document.getElementById('inspeccionesPendientes').textContent = `${inspAtrasadasCount} plantas requieren inspección`;
+            document.getElementById('documentosPorVencer').textContent = `${proximosVencCount} documentos vencen pronto`;
+            
+            const totalPlantas = plantas.length;
+            const plantasEnRegla = totalPlantas - inspAtrasadasCount - docsVencidosCount; // Simplificado
+            const cumplimiento = totalPlantas > 0 ? ((plantasEnRegla / totalPlantas) * 100).toFixed(2) : 0;
+            document.getElementById('cumplimiento').textContent = `${cumplimiento}% plantas en regla`;
+
+            if (docsVencidosCount === 0) documentosVencidosLista.innerHTML = '<p style="color: #28a745;"><i class="fa-solid fa-check-circle"></i> No hay documentos vencidos.</p>';
+            if (proximosVencCount === 0) proximosVencimientos.innerHTML = '<p style="color: #28a745;"><i class="fa-solid fa-check-circle"></i> No hay próximos vencimientos.</p>';
+            if (inspAtrasadasCount === 0) inspeccionesAtrasadas.innerHTML = '<p style="color: #28a745;"><i class="fa-solid fa-check-circle"></i> No hay inspecciones atrasadas.</p>';
+        }
+
+        // --- Funcionalidad de Reportes ---
+        function renderReportes() {
+            const reportPendingList = document.getElementById('reportPendingList');
+            reportPendingList.innerHTML = '';
+            let hasPendingReport = false;
+            const today = new Date();
+
+            plantas.forEach(planta => {
+                if (planta.fechaUltimaInspeccion) {
+                    const lastInspectionDate = new Date(planta.fechaUltimaInspeccion);
+                    const diffTime = Math.abs(today - lastInspectionDate);
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                    // Misma lógica que en el dashboard, si la inspección tiene más de 180 días (6 meses)
+                    if (diffDays > 180) {
+                        const li = document.createElement('li');
+                        li.innerHTML = `<i class="fa-solid fa-clock-rotate-left"></i> La planta <strong>${planta.nombrePlanta}</strong> requiere inspección. Última: ${planta.fechaUltimaInspeccion}`;
+                        reportPendingList.appendChild(li);
+                        hasPendingReport = true;
+                    }
+                } else if (planta.estado !== 'Sin Actividad') {
+                     const li = document.createElement('li');
+                     li.innerHTML = `<i class="fa-solid fa-file-circle-question"></i> La planta <strong>${planta.nombrePlanta}</strong> no tiene registro de última inspección.`;
+                     reportPendingList.appendChild(li);
+                     hasPendingReport = true;
+                }
+            });
+            if (!hasPendingReport) {
+                reportPendingList.innerHTML = '<li><i class="fa-solid fa-check-circle" style="color: #28a745;"></i> No hay plantas pendientes de inspección.</li>';
+            }
+
+            renderCapacidadesTable();
+        }
+
+        function renderCapacidadesTable() {
+            const capacidadesBody = document.getElementById('capacidadesBody');
+            capacidadesBody.innerHTML = '';
+
+            const resumenMinerales = {}; // { mineral: { plantas: count, capacidadReal: sum, capacidadOperada: sum } }
+
+            plantas.forEach(planta => {
+                if (planta.mineralPrincipal) {
+                    if (!resumenMinerales[planta.mineralPrincipal]) {
+                        resumenMinerales[planta.mineralPrincipal] = {
+                            plantas: 0,
+                            capacidadReal: 0,
+                            capacidadOperada: 0
+                        };
+                    }
+                    resumenMinerales[planta.mineralPrincipal].plantas++;
+                    resumenMinerales[planta.mineralPrincipal].capacidadReal += (planta.capacidadReal || 0);
+                    resumenMinerales[planta.mineralPrincipal].capacidadOperada += (planta.capacidadOperada || 0);
+                }
+            });
+
+            for (const mineral in resumenMinerales) {
+                const data = resumenMinerales[mineral];
+                const utilizacion = data.capacidadReal > 0 ? ((data.capacidadOperada / data.capacidadReal) * 100).toFixed(2) : 0;
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${mineral}</td>
+                    <td>${data.plantas}</td>
+                    <td>${data.capacidadReal.toFixed(2)}</td>
+                    <td>${data.capacidadOperada.toFixed(2)}</td>
+                    <td>${utilizacion}%</td>
+                `;
+                capacidadesBody.appendChild(row);
+            }
+
+            if (Object.keys(resumenMinerales).length === 0) {
+                capacidadesBody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: #777; padding: 20px;">No hay datos de capacidad por mineral.</td></tr>';
+            }
+        }
+
+
+        // --- Funcionalidad de Exportación (Excel y PDF) ---
+        function exportToExcel(dataType) {
+            let dataToExport = [];
+            let sheetName = '';
+            let headers = [];
+
+            if (dataType === 'plantas') {
+                dataToExport = plantas.map(p => ({
+                    'ID': p.id,
+                    'Nombre Planta': p.nombrePlanta,
+                    'Representante Legal': p.representanteLegal,
+                    'NIT': p.nit,
+                    'Dirección': p.direccion,
+                    'Teléfono': p.telefono,
+                    'Latitud': p.latitud,
+                    'Longitud': p.longitud,
+                    'Procedencia Mineral': p.procedencia,
+                    'Destino Mineral': p.destino,
+                    'Actividad': p.actividad,
+                    'Mineral Principal': p.mineralPrincipal,
+                    'Capacidad Real (TM/día)': p.capacidadReal,
+                    'Capacidad Operada (TM/día)': p.capacidadOperada,
+                    'Fecha Última Inspección': p.fechaUltimaInspeccion,
+                    'Estado': p.estado,
+                    'Licencia Ambiental': p.licenciaAmbiental,
+                    'Licencia Funcionamiento': p.licenciadeFuncionamiento,
+                    'Empadronamiento Minero': p.empadronamientominero,
+                    'Observaciones': p.observacionesPlanta
+                }));
+                sheetName = 'Plantas Metalúrgicas';
+                headers = Object.keys(dataToExport[0] || {});
+            } else if (dataType === 'inspecciones') {
+                dataToExport = inspecciones.map(i => {
+                    const planta = plantas.find(p => p.id === i.plantaId);
+                    const plantaNombre = planta ? planta.nombrePlanta : 'Desconocida';
+                    return {
+                        'ID Inspección': i.id,
+                        'Fecha': i.fecha,
+                        'Planta': plantaNombre,
+                        'Inspector': i.inspector,
+                        'Estado Inspección': i.estado,
+                        'Observaciones Detalladas': i.observaciones,
+                        'Acciones Recomendadas': i.acciones,
+                        'Fecha Próxima Inspección': i.proximaInspeccion
+                    };
+                });
+                sheetName = 'Inspecciones';
+                headers = Object.keys(dataToExport[0] || {});
+            }
+
+            if (dataToExport.length === 0) {
+                alert('No hay datos para exportar en este momento.');
+                return;
+            }
+
+            const ws = XLSX.utils.json_to_sheet(dataToExport, { header: headers });
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, sheetName);
+            XLSX.writeFile(wb, `${sheetName}.xlsx`);
+            showMessage('success', `${sheetName} exportado a Excel exitosamente.`);
+        }
+
+        function exportToPDF(dataType) {
+            window.jsPDF = window.jspdf.jsPDF;
+            const doc = new jsPDF('p', 'pt', 'letter');
+            let elementId = '';
+            let title = '';
+
+            if (dataType === 'plantas') {
+                elementId = 'plantasList';
+                title = 'Reporte de Plantas Metalúrgicas';
+            } else if (dataType === 'inspecciones') {
+                elementId = 'inspeccionesTable';
+                title = 'Reporte de Inspecciones';
+            } else {
+                alert('Tipo de datos para PDF no soportado.');
+                return;
+            }
+
+            const element = document.getElementById(elementId);
+            if (!element) {
+                alert('Elemento no encontrado para la exportación a PDF.');
+                return;
+            }
+
+            doc.html(element, {
+                callback: function (doc) {
+                    doc.save(`${title}.pdf`);
+                    showMessage('success', `${title} exportado a PDF exitosamente.`);
+                },
+                x: 10,
+                y: 10,
+                html2canvas: { scale: 0.7 }
+            });
+        }
+
+        function downloadTemplate() {
+            const templateData = [
+                {
+                    'Nombre Planta': 'Ejemplo S.R.L.',
+                    'Representante Legal': 'Juan Pérez',
+                    'NIT': '123456789',
+                    'Dirección': 'Av. Principal #123',
+                    'Teléfono': '71234567',
+                    'Latitud': -19.58,
+                    'Longitud': -65.75,
+                    'Procedencia Mineral': 'Mina X',
+                    'Destino Mineral': 'Mercado Nacional',
+                    'Actividad': 'Concentración',
+                    'Mineral Principal': 'Ag Pb Zn',
+                    'Capacidad Real (TM/día)': 100,
+                    'Capacidad Operada (TM/día)': 70,
+                    'Fecha Última Inspección': '2024-06-15',
+                    'Estado': 'Operativa',
+                    'Licencia Ambiental': 'LA-001',
+                    'Licencia Funcionamiento': 'LF-001',
+                    'Empadronamiento Minero': 'EM-001',
+                    'Observaciones': 'Ninguna'
+                }
+            ];
+
+            const ws = XLSX.utils.json_to_sheet(templateData);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'Plantilla Plantas');
+            XLSX.writeFile(wb, 'plantilla_plantas.xlsx');
+            showMessage('success', 'Plantilla de Excel descargada.');
+        }
+
+        function importFromExcel(event) {
+            const file = event.target.files[0];
+            if (!file) {
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const firstSheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[firstSheetName];
+                const json = XLSX.utils.sheet_to_json(worksheet);
+
+                // Mapear los nombres de las columnas del Excel a las propiedades del objeto planta
+                const newPlantas = json.map(row => ({
+                    id: Date.now().toString() + Math.random().toString(36).substring(2, 9), // ID único
+                    nombrePlanta: row['Nombre Planta'] || '',
+                    representanteLegal: row['Representante Legal'] || '',
+                    nit: row['NIT'] || '',
+                    direccion: row['Dirección'] || '',
+                    telefono: row['Teléfono'] || '',
+                    latitud: parseFloat(row['Latitud']) || 0,
+                    longitud: parseFloat(row['Longitud']) || 0,
+                    procedencia: row['Procedencia Mineral'] || '',
+                    destino: row['Destino Mineral'] || '',
+                    actividad: row['Actividad'] || '',
+                    mineralPrincipal: row['Mineral Principal'] || '',
+                    capacidadReal: parseFloat(row['Capacidad Real (TM/día)']) || 0,
+                    capacidadOperada: parseFloat(row['Capacidad Operada (TM/día)']) || 0,
+                    fechaUltimaInspeccion: row['Fecha Última Inspección'] || '',
+                    estado: row['Estado'] || 'Sin Actividad',
+                    licenciaAmbiental: row['Licencia Ambiental'] || '',
+                    licenciadeFuncionamiento: row['Licencia Funcionamiento'] || '',
+                    empadronamientominero: row['Empadronamiento Minero'] || '',
+                    observacionesPlanta: row['Observaciones'] || ''
+                }));
+
+                plantas = [...plantas, ...newPlantas];
+                savePlantas();
+                renderPlantas();
+                updateMapMarkers();
+                updateDashboard();
+                updateAlerts();
+                renderReportes();
+                showMessage('success', `Se importaron ${newPlantas.length} plantas desde Excel.`);
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function exportPendingInspections() {
+            const pendingInspections = [];
+            const today = new Date();
+
+            plantas.forEach(planta => {
+                if (planta.fechaUltimaInspeccion) {
+                    const lastInspectionDate = new Date(planta.fechaUltimaInspeccion);
+                    const diffTime = Math.abs(today - lastInspectionDate);
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                    if (diffDays > 180) { // Más de 6 meses
+                        pendingInspections.push({
+                            'Nombre Planta': planta.nombrePlanta,
+                            'Última Inspección': planta.fechaUltimaInspeccion,
+                            'Días desde última inspección': diffDays,
+                            'Estado Actual': planta.estado
+                        });
+                    }
+                } else if (planta.estado !== 'Sin Actividad') {
+                     pendingInspections.push({
+                        'Nombre Planta': planta.nombrePlanta,
+                        'Última Inspección': 'No Registrada',
+                        'Días desde última inspección': 'N/A',
+                        'Estado Actual': planta.estado
+                    });
+                }
+            });
+
+            if (pendingInspections.length === 0) {
+                alert('No hay inspecciones pendientes para exportar.');
+                return;
+            }
+
+            const ws = XLSX.utils.json_to_sheet(pendingInspections);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'Inspecciones Pendientes');
+            XLSX.writeFile(wb, 'inspecciones_pendientes.xlsx');
+            showMessage('success', 'Reporte de inspecciones pendientes exportado a Excel.');
+        }
+
+        function exportExpiredDocuments() {
+            const expiredDocuments = [];
+            plantas.forEach(planta => {
+                // Lógica de ejemplo para documentos vencidos, similar a updateAlerts
+                if (planta.licenciaAmbiental && planta.licenciaAmbiental.toLowerCase().includes('vencida')) {
+                    expiredDocuments.push({
+                        'Nombre Planta': planta.nombrePlanta,
+                        'Tipo Documento': 'Licencia Ambiental',
+                        'Detalle': planta.licenciaAmbiental
+                    });
+                }
+                // Añadir más lógica para otros documentos si es necesario
+            });
+
+            if (expiredDocuments.length === 0) {
+                alert('No hay documentos vencidos para exportar.');
+                return;
+            }
+
+            const ws = XLSX.utils.json_to_sheet(expiredDocuments);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'Documentos Vencidos');
+            XLSX.writeFile(wb, 'documentos_vencidos.xlsx');
+            showMessage('success', 'Reporte de documentos vencidos exportado a Excel.');
+        }
+
+        function exportPlantStatus() {
+            const plantStatusData = plantas.map(p => ({
+                'Nombre Planta': p.nombrePlanta,
+                'Estado': p.estado,
+                'Mineral Principal': p.mineralPrincipal,
+                'Actividad': p.actividad,
+                'Capacidad Real (TM/día)': p.capacidadReal,
+                'Capacidad Operada (TM/día)': p.capacidadOperada,
+                'Última Inspección': p.fechaUltimaInspeccion || 'N/A'
+            }));
+
+            if (plantStatusData.length === 0) {
+                alert('No hay datos de estado de plantas para exportar.');
+                return;
+            }
+
+            const ws = XLSX.utils.json_to_sheet(plantStatusData);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'Estado de Plantas');
+            XLSX.writeFile(wb, 'estado_plantas.xlsx');
+            showMessage('success', 'Reporte de estado de plantas exportado a Excel.');
+        }
+
+        function exportFullReport() {
+            window.jsPDF = window.jspdf.jsPDF;
+            const doc = new jsPDF('p', 'pt', 'letter');
+
+            const margin = 30;
+            let yPos = margin;
+
+            doc.setFontSize(18);
+            doc.text("Reporte Completo de Fiscalización de Plantas", margin, yPos);
+            yPos += 30;
+
+            // Sección de Resumen Dashboard
+            doc.setFontSize(14);
+            doc.text("Resumen del Panel de Control:", margin, yPos);
+            yPos += 20;
+
+            const dashboardStats = [
+                `Total Plantas: ${document.getElementById('totalPlantas').textContent}`,
+                `Operativas: ${document.getElementById('plantasOperativas').textContent}`,
+                `Suspendidas: ${document.getElementById('plantasSuspendidas').textContent}`,
+                `Sin Actividad: ${document.getElementById('plantasSinActividad').textContent}`,
+                `Documentos Vencidos: ${document.getElementById('documentosVencidos').textContent}`
+            ];
+            doc.setFontSize(12);
+            doc.text(dashboardStats, margin + 10, yPos);
+            yPos += (dashboardStats.length * 15) + 20;
+
+            // Sección de Plantas
+            doc.setFontSize(14);
+            doc.text("Detalle de Plantas:", margin, yPos);
+            yPos += 20;
+
+            const plantasTableData = plantas.map(p => [
+                p.nombrePlanta, p.estado, p.mineralPrincipal, p.capacidadReal || 'N/A', p.capacidadOperada || '0'
+            ]);
+            const plantasHeaders = [['Nombre', 'Estado', 'Mineral', 'Cap. Real (TM/día)', 'Cap. Operada (TM/día)']];
+
+            doc.autoTable({
+                startY: yPos,
+                head: plantasHeaders,
+                body: plantasTableData,
+                margin: { left: margin, right: margin },
+                styles: { fontSize: 10, cellPadding: 5 },
+                headStyles: { fillColor: [37, 141, 25] }, // Color verde
+                didDrawPage: function(data) {
+                    yPos = data.cursor.y + 20;
+                }
+            });
+
+            // Sección de Inspecciones
+            doc.setFontSize(14);
+            doc.text("Detalle de Inspecciones:", margin, yPos);
+            yPos += 20;
+
+            const inspeccionesTableData = inspecciones.map(i => {
+                const planta = plantas.find(p => p.id === i.plantaId);
+                const plantaNombre = planta ? planta.nombrePlanta : 'Desconocida';
+                return [i.fecha, plantaNombre, i.inspector, i.estado, i.proximaInspeccion || 'N/A'];
+            });
+            const inspeccionesHeaders = [['Fecha', 'Planta', 'Inspector', 'Estado', 'Próxima Inspección']];
+
+            doc.autoTable({
+                startY: yPos,
+                head: inspeccionesHeaders,
+                body: inspeccionesTableData,
+                margin: { left: margin, right: margin },
+                styles: { fontSize: 10, cellPadding: 5 },
+                headStyles: { fillColor: [37, 141, 25] }, // Color verde
+                didDrawPage: function(data) {
+                    yPos = data.cursor.y + 20;
+                }
+            });
+
+            doc.save('reporte_completo.pdf');
+            showMessage('success', 'Reporte completo exportado a PDF.');
+        }
+
+
+        // --- Inicialización al cargar la página ---
+        document.addEventListener('DOMContentLoaded', () => {
+            checkLogin(); // Verificar el estado del login al cargar la página
+        });
+    </script>
+</body>
+</html>
